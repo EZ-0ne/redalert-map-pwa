@@ -63,49 +63,89 @@ const App = (() => {
 
   // ── Connection ────────────────────────────────────────────────────────
   async function connect(){
-    const addr = document.getElementById('setup-addr').value.trim() || 'redalertmap.local';
-    const base = addr.startsWith('http') ? addr : `http://${addr}`;
-    setMsg('Connecting…','');
+    const raw = document.getElementById('setup-addr').value.trim();
+    if(!raw){ setMsg('Enter an address first.','color:var(--yellow)'); return; }
+    const base = raw.startsWith('http') ? raw : `http://${raw}`;
+    setMsg('Connecting…','color:var(--txt2)');
+    setBtnState(true);
     try {
-      const r = await fetch(`${base}/status`,{signal:AbortSignal.timeout(4000)});
+      const r = await fetch(`${base}/status`,{signal:AbortSignal.timeout(5000)});
       if(!r.ok) throw new Error('HTTP '+r.status);
       const d = await r.json();
+      if(!d.version) throw new Error('Not a Red Alert device');
       _base = base;
       localStorage.setItem('ra_device', base);
+      setMsg('','');
       hidConnScreen();
+      setConn(true);
       startPolling();
       updateFromStatus(d);
     } catch(e){
-      setMsg('Could not connect: '+e.message,'color:var(--red)');
+      setConn(false);
+      let msg = e.message;
+      if(msg.includes('Failed to fetch')||msg.includes('NetworkError')||msg.includes('Load failed')){
+        msg = 'Blocked by browser (mixed content). Make sure you enabled the Chrome flag for this address, or try connecting via the ESP32 hotspot.';
+      } else if(e.name==='TimeoutError'){
+        msg = 'Timed out — is the ESP32 powered on and reachable?';
+      }
+      setMsg(msg,'color:var(--red)');
+    } finally {
+      setBtnState(false);
     }
   }
 
   async function connectAuto(){
-    setMsg('Auto-detecting…','');
-    const candidates = ['http://redalertmap.local','http://192.168.4.1'];
+    setMsg('Auto-detecting…','color:var(--txt2)');
+    setBtnState(true);
+    // Always try the saved address first, then mDNS, then AP IP
     const saved = localStorage.getItem('ra_device');
-    if(saved && !candidates.includes(saved)) candidates.unshift(saved);
+    const candidates = [];
+    if(saved) candidates.push(saved);
+    if(!candidates.includes('http://redalertmap.local')) candidates.push('http://redalertmap.local');
+    if(!candidates.includes('http://192.168.4.1')) candidates.push('http://192.168.4.1');
+    let found = false;
     for(const c of candidates){
+      setMsg(`Trying ${c.replace('http://','')}…`,'color:var(--txt2)');
       try{
         const r = await fetch(`${c}/status`,{signal:AbortSignal.timeout(3000)});
         if(r.ok){
-          document.getElementById('setup-addr').value = c.replace('http://','');
-          await connect(); return;
+          const d = await r.json();
+          if(d.version){
+            // Found it — also check if ESP32 has a real IP we should use instead
+            const betterBase = d.ip ? `http://${d.ip}` : c;
+            document.getElementById('setup-addr').value = betterBase.replace('http://','');
+            found = true;
+            setBtnState(false);
+            await connect();
+            return;
+          }
         }
       }catch(e){}
     }
-    setMsg('No device found. Enter address manually.','color:var(--yellow)');
+    if(!found){
+      setBtnState(false);
+      setMsg('No device found. Enter the IP address manually (check your router for the ESP32\'s IP, or connect to the RedAlertMap hotspot first).','color:var(--yellow)');
+      setConn(false);
+    }
+  }
+
+  function setBtnState(loading){
+    const b1 = document.getElementById('btn-connect');
+    const b2 = document.querySelector('[onclick="App.connectAuto()"]');
+    if(b1){ b1.disabled = loading; b1.textContent = loading ? 'Connecting…' : (LANG==='he'?'התחבר':'Connect'); }
+    if(b2){ b2.disabled = loading; }
   }
 
   function setMsg(msg, style){
     const el = document.getElementById('conn-msg');
-    el.textContent = msg; el.style.cssText = style||'';
+    if(el){ el.textContent = msg; el.style.cssText = style||''; }
   }
 
   function showConnScreen(){
     document.getElementById('conn-screen').style.display='flex';
     const saved = localStorage.getItem('ra_device');
     if(saved) document.getElementById('setup-addr').value = saved.replace('http://','');
+    setConn(false);
   }
 
   function hidConnScreen(){
@@ -193,7 +233,9 @@ const App = (() => {
 
   function setConn(ok){
     const dot = document.getElementById('dot');
-    dot.className = 'dot'+(ok?' on':' err');
+    const lbl = document.getElementById('conn-lbl');
+    if(dot) dot.className = 'dot'+(ok?' on':' err');
+    if(!ok && lbl && !lbl.textContent) lbl.textContent = 'Not connected';
   }
 
   // ── Navigation ────────────────────────────────────────────────────────
@@ -235,14 +277,33 @@ const App = (() => {
   // Boot
   function init(){
     applyTheme(); applyLang();
+    // Dot starts grey — not connected yet
+    setConn(false);
     if('serviceWorker' in navigator){
       navigator.serviceWorker.register('/sw.js').catch(()=>{});
     }
     const saved = localStorage.getItem('ra_device');
     if(saved){
+      // Pre-fill address field and show screen briefly while we verify
+      document.getElementById('setup-addr').value = saved.replace('http://','');
+      setMsg('Reconnecting to '+saved.replace('http://','')+'…','color:var(--txt2)');
       _base = saved;
-      hidConnScreen();
-      startPolling();
+      // Try to verify saved address — show conn screen if it fails
+      fetch(`${saved}/status`,{signal:AbortSignal.timeout(4000)})
+        .then(r=>r.ok ? r.json() : Promise.reject('bad status'))
+        .then(d=>{
+          if(!d.version) throw new Error('not a device');
+          hidConnScreen();
+          setConn(true);
+          startPolling();
+          updateFromStatus(d);
+        })
+        .catch(()=>{
+          // Saved address is stale or unreachable — show connection screen
+          _base = '';
+          setMsg('Could not reach '+saved.replace('http:///','')+'. Enter address or tap Auto-detect.','color:var(--yellow)');
+          showConnScreen();
+        });
     } else {
       showConnScreen();
     }
