@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#e81c2a">
+<title>Red Alert LED Map</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ── Connection setup screen ── -->
+<div id="conn-screen">
+  <div class="conn-box">
+    <div class="conn-logo">RED ALERT</div>
+    <div class="conn-sub" data-en="LED Map Dashboard — Connect to your device" data-he="לוח בקרה — התחבר למכשיר שלך">LED Map Dashboard — Connect to your device</div>
+    <label data-en="Device address" data-he="כתובת המכשיר">Device address</label>
+    <input type="text" id="setup-addr" placeholder="redalertmap.local or 192.168.4.1">
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-red" onclick="App.connect()" id="btn-connect" data-en="Connect" data-he="התחבר">Connect</button>
+      <button class="btn" onclick="App.connectAuto()" data-en="Auto-detect" data-he="זיהוי אוטומטי">Auto-detect</button>
+    </div>
+    <div id="conn-msg" style="margin-top:10px;font-size:11px;color:var(--txt2)"></div>
+    <div style="margin-top:16px;font-size:10px;color:var(--txt3)" data-en="The app works offline after first connect. Device must be reachable on your local network." data-he="האפליקציה עובדת לא מקוון לאחר חיבור ראשוני.">
+      The app works offline after first connect. Device must be reachable on your local network.
+    </div>
+  </div>
+</div>
+
+<!-- ── Header ── -->
+<div id="header">
+  <div>
+    <div class="logo">RED<span style="color:var(--txt3);font-size:12px;font-weight:500"> ALERT </span>LED</div>
+  </div>
+  <div id="conn-status">
+    <div class="dot" id="dot"></div>
+    <span id="conn-lbl" style="font-size:11px">--</span>
+    <span id="active-count" class="badge badge-red" style="display:none">0</span>
+  </div>
+  <button id="theme-btn" onclick="App.toggleTheme()" title="Toggle theme">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+  <button id="lang-btn" onclick="App.toggleLang()">EN</button>
+  <button class="btn" onclick="App.showConnScreen()" style="font-size:10px;padding:4px 8px" title="Change device">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.5 2 2 0 0 1 3.6 1.33h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.97a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+  </button>
+</div>
+
+<!-- ── Tab Navigation ── -->
+<div id="tab-nav">
+  <button class="tab-btn active" onclick="App.showTab('live')" data-tab="live">
+    <span class="tab-num">1</span><span data-en="Live Map" data-he="מפה חיה">Live Map</span>
+  </button>
+  <button class="tab-btn" onclick="App.showTab('calibrator')" data-tab="calibrator">
+    <span class="tab-num">2</span><span data-en="Calibrator" data-he="כיול">Calibrator</span>
+  </button>
+  <button class="tab-btn" onclick="App.showTab('scenes')" data-tab="scenes">
+    <span class="tab-num">3</span><span data-en="Scenes" data-he="סצנות">Scenes</span>
+  </button>
+  <button class="tab-btn" onclick="App.showTab('settings')" data-tab="settings">
+    <span class="tab-num">4</span><span data-en="Settings" data-he="הגדרות">Settings</span>
+  </button>
+  <button class="tab-btn" onclick="App.showTab('history')" data-tab="history">
+    <span class="tab-num">5</span><span data-en="History" data-he="היסטוריה">History</span>
+  </button>
+  <button class="tab-btn" onclick="App.showTab('device')" data-tab="device">
+    <span class="tab-num">6</span><span data-en="Device" data-he="מכשיר">Device</span>
+  </button>
+</div>
+
+<!-- ── Main ── -->
+<div id="main">
+
+<!-- ════ TAB 1: LIVE MAP ════ -->
+<div class="tab-panel active" id="tab-live">
+  <div id="alert-banner" class="card" style="background:var(--red);color:#fff;border:none;padding:10px 16px;text-align:center;font-family:var(--ui);font-weight:700;font-size:14px;margin-bottom:8px;display:none" id="alert-banner">
+    <span id="alert-banner-text">ALERTS ACTIVE</span>
+  </div>
+
+  <div class="stat-grid" id="live-stats">
+    <div class="stat"><div class="stat-val" id="stat-alerts">0</div><div class="stat-lbl" data-en="Active Alerts" data-he="התראות פעילות">Active Alerts</div></div>
+    <div class="stat"><div class="stat-val" id="stat-leds">--</div><div class="stat-lbl" data-en="LEDs" data-he="נוריות">LEDs</div></div>
+    <div class="stat"><div class="stat-val" id="stat-poll">--</div><div class="stat-lbl" data-en="Last Poll" data-he="עדכון אחרון">Last Poll</div></div>
+    <div class="stat"><div class="stat-val" id="stat-state">--</div><div class="stat-lbl" data-en="State" data-he="מצב">State</div></div>
+  </div>
+
+  <div class="card" id="map-container">
+    <div class="map-toolbar">
+      <span style="font-size:10px;color:var(--txt3)" data-en="Live LED overlay — updates every 2s" data-he="כיסוי נוריות חי">Live LED overlay — updates every 2s</span>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+        <button class="btn" onclick="App.toggleMapLabels()" id="btn-map-labels" style="font-size:10px;padding:4px 8px" data-en="Labels" data-he="תוויות">Labels</button>
+        <button class="btn btn-red" onclick="App.clearAllAlerts()" style="font-size:10px;padding:4px 8px" data-en="Clear All" data-he="נקה הכל">Clear All</button>
+      </div>
+    </div>
+    <div id="map-svg-wrap">
+      <!-- Israel SVG map with LED overlay group injected here by JS -->
+      <div id="map-svg-container" style="position:relative;display:inline-block">
+        <svg id="map-svg" viewBox="0 0 294.62534 792.60406" style="max-height:65vh;width:auto;display:block" xmlns="http://www.w3.org/2000/svg">
+<path id="IL-GH" title="Golan Heights" d="m 290.6293,111.87855 -3.12,5.45 -2.53,5.56 -2.8,3 -4.23,7.59 -5.38,6.25 -0.16,-0.68 -1.09,-0.62 -3.76,1.55 -1.79,0.22 -0.86,0.73 -0.67,1.52 -0.7,2.77 -3.93,0.54 -2.48,2.51 -2.74,1.94 -1.71,0.52 -1.23,0.8 -4.27,0.3 -2.06,1.33 0,0 -0.09,-1.28 -0.49,-0.54 -3.3,-1.49 -1.25,-0.89 0.05,-0.4 3.27,-3.32 1.93,-4.04 0.53,-3.58 0.31,-7.42 1.21,-4.61 0.33,-3.08 -0.47,-3.25 -0.75,-1.94 -2.24,-4.39 -1.52,-1.63 -0.72,-1.24 -1.29,0.56 -0.79,-0.44 -0.36,-0.87 0.05,-1.06 1,-2.21 0.35,-1.75 0.76,-10.480002 -0.29,-4.73 -1.99,-3.74 -0.06,-0.96 2.83,-2.83 1.78,-3.4 0.81,-0.94 1.85,-0.56 0.5,0.58 0.06,-5.32 0.47,-4.48 2.57,-6.86 0.64,-2.49 0.01,-1.38 -0.83,-3.57 -0.31,-2.73 0.12,-4.47 0.84,-3.21 1.48,-3.42 -0.16,-0.53 -0.99,-0.58 -2.17,-0.29 -1.03,0.13 -2.26,1.21 -1.29,0.33 -1.28,-0.31 -1.44,-1.35 0,0 0.65,-1.63 0.81,-1.06 5,-2.35 5.27,-3.16 1.78,-1.71 2.56,-4.09 1.43,-1.3 1.07,-0.42 4.33,0.37 2.62,-0.45 3.46,-1.44 3.2,-2.61 1.01,-1.38 0.54,-1.62 0.8,-5.2299999 1.48,-2.36 2.62,-1.91 9.49,-5.26 0.89,0.69 0.24,1.47 -0.62,2.62 -1.8,2.98 -3.43,3.9099999 -1.47,3.82 -0.53,3.71 0.83,8.33 -0.26,1.4 -1.98,3.38 1.28,1.54 2.54,2.17 1.12,1.56 0.57,0.99 1.16,4.17 0.22,2.41 -0.34,1.63 -0.65,1.67 -1.54,1.68 -0.55,1.1 0.33,2.22 1.43,0.51 2.36,0.25 1.31,0.61 3.64,5.26 -0.41,5.37 -2.76,2.44 -0.32,0.85 0.39,1.12 1.95,2.21 0.2,0.88 -0.25,0.5 -0.92,0.55 -1.94,0.23 -3.43,-0.91 -0.73,0.59 -0.41,1.07 0.87,3.58 -0.51,6.44 0.9,2.93 1.48,13.610002 3,4.16 0.59,1.43 0.01,1.13 -0.79,2.18 z" fill="rgba(100,200,150,0.10)" stroke="rgba(100,200,150,0.55)" stroke-width="0.8"/>
+<path id="IL-Z" title="HaẔafon" d="m 209.7393,209.61855 -1.14,-1.01 0.05,-1.03 -1.22,-1.58 -1,-2.94 0.21,-4.06 -0.54,-4.36 -2.8,-4.74 -2.79,-2.08 -1.46,-0.36 -3.31,-0.06 -8.43,1.55 -2.01,-0.01 -1.37,-0.36 -2.71,-1.34 -2.64,-1.94 -3.08,-3.19 -2.38,-1.3 -1.67,0.25 -0.92,0.46 -0.96,1.09 0,0 -0.91,-1.54 -0.43,-0.45 -2.01,-0.79 -0.57,-0.4 -1.3,-2.43 -0.48,-0.45 -0.62,-0.28 -1,0.39 -1.25,2.04 -1.87,0.9 -0.52,0.45 -0.29,1.53 -0.38,0.57 -1.11,0.34 -1.14,2.09 -0.72,0.62 -1.05,0.39 -0.48,0 -2.83,-0.9 -2.68,0 -0.72,-0.23 -0.62,-0.73 -0.43,-1.02 -0.67,-0.28 -0.29,0.22 -0.77,0.06 -0.52,-1.35 -0.53,-0.4 -1.05,-0.34 -0.34,-1.08 0.53,-1.75 0.09,-1.35 -0.43,-0.51 -0.95,-0.4 -0.43,-0.96 -0.34,-0.17 -0.81,0.06 -0.48,-0.46 -0.29,-1.07 0,-1.7 -0.67,-0.73 -0.33,-0.12 -0.49,-0.45 -0.14,-0.79 0.39,-0.57 0.67,-0.22 1.29,0 1.34,0.56 0.81,0.12 1.06,-0.23 0.14,-0.74 -0.38,-0.56 -2.59,-0.68 -0.57,-0.79 -0.1,-0.85 0.19,-1.19 0.67,-1.19 0.48,-0.51 0.96,-0.39 0.86,0 1.05,0.28 1.92,0.96 0.77,0 0.52,-0.45 0.53,-0.85 1.24,-2.94 0.58,-0.8 3.02,-1.69 0.47,-0.46 0.29,-0.62 -0.05,-1.24 -0.57,-0.8 -0.82,-0.62 -0.28,-0.68 0.09,-2.04 0.24,-0.68 0.43,-0.45 0.43,-0.06 0.48,0.46 0.87,1.47 0.33,0.17 0.62,-0.23 1.1,-1.24 0.29,-0.63 0.15,-0.79 0,-0.45 -0.39,-1.02 1.63,-1.19 0.38,-0.51 0.1,-0.4 -0.77,-2.04 -0.09,-0.85 0.09,-0.39 2.54,-4.03 0.1,-1.19 0.33,-1.08 -0.05,-0.9 -0.33,-0.96 -0.91,-1.42 -1.25,-3.06 -0.04,-1.25 0.67,-2.61 -0.15,-0.79 -1.1,-0.8 -3.21,-0.96 -1.77,-1.53 -1.53,-0.8 0,-0.74 0.57,-2.21 0.05,-0.9 -0.38,-0.52 -0.91,-0.51 -0.67,-0.73 -0.38,-1.02 -0.15,-1.25 -0.32,-0.08 0.51,-3.73 -0.69,-2.03 -1.2,0.17 0,0 -0.33,-0.49 -0.39,-0.29 -0.57,-0.05 -0.19,0.17 0,0.45 -0.34,-0.11 -0.43,0.05 0,-0.45 0.77,-2.04 0.09,-1.48 0.67,-2.780002 0.05,-1.65 0.15,-0.34 -0.05,-0.68 0.09,-0.06 0,-0.57 0.2,-0.68 -0.05,-0.28 0.43,-1.08 0,-0.51 0.29,-0.12 0,-1.53 0.19,-0.17 0.14,-0.85 0.67,-1.25 -0.05,-0.8 -0.14,-0.28 0.14,-0.12 0,-0.74 0.24,-0.45 -0.04,-0.57 0.28,-0.62 -0.05,-0.17 0.24,-0.12 -0.09,-0.57 0.33,-0.68 0.15,-0.85 0.24,-0.46 0.09,-0.85 0.48,-0.85 -0.19,-0.11 0,-0.46 0.48,-0.4 -0.1,-0.11 0.15,-0.46 -0.1,-0.28 0.34,-0.51 -0.1,-0.57 0.14,0 -0.04,-0.62 0.23,-0.18 0.05,-1.3 0.19,-0.4 0.1,-1.88 0.19,-0.34 0,-0.62 -0.14,-0.18 0,-1.94 7.69,-0.11 5.43,-0.46 6.11,1.06 0.6,-0.26 0.99,-1.07 1.99,-0.65 6.38,-0.21 6.64,-0.93 3.41,0.81 2.9,5.51 1.62,1.86 2.6,1.54 1,0.29 4.38,-1.95 4.73,-0.38 1.25,-0.66 2.94,-2.83 0.85,-1.16 1.41,-1.04 0.75,-0.08 3.04,0.73 2.91,-1.1 0.41,-0.49 0.23,-2.59 0.39,-0.86 3.28,-1.39 0.86,-2.05 0.35,-4.48 1.08,-4.97 1.11,-1.93 0.85,-2.28 -0.14,-2.49 -0.62,-2.8 0.08,-1.6 1.47,-3.35 1,-0.84 1.62,-2.13 1.65,-3.64 0.41,-0.43 1.21,0.99 4.08,5.82 0.67,0.21 0.63,-0.61 0,0 1.44,1.35 1.28,0.31 1.29,-0.33 2.26,-1.21 1.03,-0.13 2.17,0.29 0.99,0.58 0.16,0.53 -1.48,3.42 -0.84,3.21 -0.12,4.47 0.31,2.73 0.83,3.57 -0.01,1.38 -0.64,2.49 -2.57,6.86 -0.47,4.48 -0.06,5.32 -0.5,-0.58 -1.85,0.56 -0.81,0.94 -1.78,3.4 -2.83,2.83 0.06,0.96 1.99,3.74 0.29,4.73 -0.76,10.480002 -0.35,1.75 -1,2.21 -0.05,1.06 0.36,0.87 0.79,0.44 1.29,-0.56 0.72,1.24 1.52,1.63 2.24,4.39 0.75,1.94 0.47,3.25 -0.33,3.08 -1.21,4.61 -0.31,7.42 -0.53,3.58 -1.93,4.04 -3.27,3.32 -0.05,0.4 1.25,0.89 3.3,1.49 0.49,0.54 0.09,1.28 0,0 -4.86,2.12 -1.12,1.28 0.32,2.87 -1.95,0.77 0.08,1.24 -0.42,0.49 -1.52,0.43 -2.49,1.89 -0.23,2.09 0.54,0.63 -0.25,3.03 0.39,0.94 1.28,0.7 0.34,1.27 -0.82,1.9 -0.12,1.91 1.77,3.67 -0.17,0.42 -1.72,-0.02 -0.31,1.92 -0.79,-0.02 -1,-0.66 -0.37,0.2 0.11,1.21 1.16,1.88 -0.38,0.64 -1.74,0.37 -0.92,1.29 0.82,0.62 1.11,-0.03 1.1,2.51 1.29,0.52 0.33,0.55 -0.21,1.04 -2.13,3.83 -0.15,1.03 0.27,0.92 1.43,0.7 0.35,0.68 -0.43,1 -0.84,0.03 -0.58,0.53 0.42,2.69 -2.02,0.63 0.5,4.6 -0.3,0.75 -1.29,0.38 -0.18,0.33 1.65,2.78 -1.41,-0.14 -4,-1.15 -5.08,-2.37 -2.16,-0.66 -3.92,-0.17 -2.58,0.75 z" fill="rgba(100,160,200,0.10)" stroke="rgba(100,160,200,0.55)" stroke-width="0.8"/>
+<path id="IL-HA" title="H̱efa" d="m 110.0793,209.62855 -0.1,-0.17 0.2,-0.46 0.33,-0.16 0.14,-0.46 0,-0.11 -0.47,0 0.28,-0.39 0,-0.29 0.24,-0.45 0.39,-0.17 -0.05,-0.17 0.09,-0.05 0.72,-3.5 0.1,-1.64 0.52,-1.58 0.29,-1.53 -0.38,-1.01 -2.11,0 0,-0.29 1.87,-0.05 0.14,-0.12 0.1,-0.45 0.19,0.17 0.05,0.4 0.57,0 0.05,-0.12 -0.33,0 -0.15,-0.16 0,-0.23 0.19,-0.06 0.1,-0.39 0,-0.23 -0.19,-0.06 0,-0.16 0.19,-0.06 0.05,0.17 0.14,0 0.24,-0.17 -0.1,-0.17 0.05,-0.62 0.53,-0.91 -0.1,-0.28 -0.28,0.11 -0.05,-0.79 0.19,-0.11 0,-0.45 0.19,-0.34 -0.1,-0.23 0.34,-0.39 0,-0.4 -0.19,-0.17 0.09,-0.67 0.39,-0.29 0.05,-0.79 0.47,-0.62 -0.47,-0.06 -0.05,-0.28 0.24,0 0.28,-0.62 0.39,-1.7 0.19,-0.28 0.05,-0.73 0.24,-0.46 -0.05,-0.73 -0.29,-0.06 -0.14,-0.17 0,-0.56 0.24,-0.74 0.38,-0.39 0.34,0.05 0.28,-0.56 -0.05,-0.23 -0.33,-0.05 0,-0.34 -0.24,-0.17 0.57,-1.08 -0.14,-0.28 0.05,-0.45 0.29,-0.34 0.38,-1.41 0.19,0.11 0.1,-0.23 -0.1,-0.39 0.38,-0.74 -0.09,-0.45 -0.34,-0.34 0,-0.34 0.34,-0.34 0.14,-0.79 -0.19,-0.11 0,-0.29 0.29,-0.84 0.28,-0.4 -0.14,-0.23 0.14,-0.39 -0.04,-0.96 0.19,-0.4 0,-0.51 -0.15,-0.11 0.2,-0.57 0.19,-1.81 0.24,-0.06 0.24,-0.56 0.09,-1.64 0.29,-1.25 0.33,-0.56 -0.28,-0.17 0.24,-1.25 -0.05,-0.9 0.43,-0.4 0.05,-0.23 0.05,-1.81 0.28,-1.87 -0.05,-1.69 0.2,-0.4 0,-0.17 -0.2,-0.17 0,-0.28 0.1,-0.12 -0.05,-0.39 0.29,-0.23 -0.05,-0.34 -0.24,-0.17 0,-0.45 0.29,-0.85 0,-0.45 0.53,-0.63 0,-0.28 0.38,-0.4 0.67,0.06 0.48,-0.62 0.33,-0.74 0.2,-0.85 -0.15,-0.51 0.34,-0.4 0.19,-2.09 0.38,-0.91 0.34,-3.96 0.19,-0.74 0,-1.76 0.09,-0.79 0.2,-0.45 0.23,-2.89 -0.19,-0.91 0.24,0 0.05,-0.11 0.14,-1.36 -0.04,-0.69 -0.24,-0.45 0.14,0 0.1,-0.17 0.14,0.17 0.14,-0.06 0,-0.17 -0.14,-0.05 0.14,-0.46 -0.19,-0.17 -0.14,-0.51 0,-1.81 0.24,-0.28 -0.19,-0.34 0.28,-0.34 0.43,0.11 1.06,-1.02 0.52,-0.12 0.63,0.06 0.86,-0.45 0.19,-0.34 0.14,-0.12 0.15,0.06 0.14,-0.23 0.43,0 0.63,0.29 0.43,0.79 0.43,0 0.24,0.23 0.86,0.34 0.52,0.05 0,0.17 0.24,0.29 1.3,0.06 1.24,-0.35 0,0.18 -0.57,0.22 -0.1,-0.11 -0.38,0.28 -0.19,0 -1.2,-0.11 -0.72,-0.23 -0.86,-0.62 -0.38,0.11 0.24,0.06 0.09,0.22 0.19,0.06 -0.04,0.23 1,0.51 0.14,0.28 0.2,0.06 0.28,0.34 0.1,0.4 0.19,-0.12 0,-0.56 0.19,0 0.1,0.51 0.24,0 0.09,-0.34 -0.24,-0.23 0,-0.23 0.05,-0.11 0.29,0.06 0.38,0.56 0.15,1.08 0.33,0.11 0.19,0.46 0.62,0 0.24,-0.17 0.53,-0.06 -0.14,-0.4 0.19,-0.05 0.76,0.51 0.15,0.9 0.96,-0.28 0.04,-0.17 -0.14,-0.23 -0.48,-0.05 -0.09,-0.57 -0.39,0.06 -0.28,-0.17 0.76,-0.23 1.53,-1.02 0.34,-0.06 0.19,-0.39 0.29,-0.06 0,-0.23 0.33,-0.17 0,-0.28 0.24,-0.23 0.29,-0.62 0.67,-0.63 1.01,-1.47 1.72,-4.03 0.29,-0.11 -0.1,-0.4 0.43,-1.42 0.19,-0.11 -0.05,-0.23 0.39,-1.08 0.24,-0.17 -0.1,-0.22 0.48,-1.65 -0.05,-0.23 0.43,-2.21 0.05,-2.5 -0.48,-0.98 0,0 1.2,-0.17 0.69,2.03 -0.51,3.73 0.32,0.08 0.15,1.25 0.38,1.02 0.67,0.73 0.91,0.51 0.38,0.52 -0.05,0.9 -0.57,2.21 0,0.74 1.53,0.8 1.77,1.53 3.21,0.96 1.1,0.8 0.15,0.79 -0.67,2.61 0.04,1.25 1.25,3.06 0.91,1.42 0.33,0.96 0.05,0.9 -0.33,1.08 -0.1,1.19 -2.54,4.03 -0.09,0.39 0.09,0.85 0.77,2.04 -0.1,0.4 -0.38,0.51 -1.63,1.19 0.39,1.02 0,0.45 -0.15,0.79 -0.29,0.63 -1.1,1.24 -0.62,0.23 -0.33,-0.17 -0.87,-1.47 -0.48,-0.46 -0.43,0.06 -0.43,0.45 -0.24,0.68 -0.09,2.04 0.28,0.68 0.82,0.62 0.57,0.8 0.05,1.24 -0.29,0.62 -0.47,0.46 -3.02,1.69 -0.58,0.8 -1.24,2.94 -0.53,0.85 -0.52,0.45 -0.77,0 -1.92,-0.96 -1.05,-0.28 -0.86,0 -0.96,0.39 -0.48,0.51 -0.67,1.19 -0.19,1.19 0.1,0.85 0.57,0.79 2.59,0.68 0.38,0.56 -0.14,0.74 -1.06,0.23 -0.81,-0.12 -1.34,-0.56 -1.29,0 -0.67,0.22 -0.39,0.57 0.14,0.79 0.49,0.45 0.33,0.12 0.67,0.73 0,1.7 0.29,1.07 0.48,0.46 0.81,-0.06 0.34,0.17 0.43,0.96 0.95,0.4 0.43,0.51 -0.09,1.35 -0.53,1.75 0.34,1.08 1.05,0.34 0.53,0.4 0.52,1.35 0.77,-0.06 0.29,-0.22 0.67,0.28 0.43,1.02 0.62,0.73 0.72,0.23 2.68,0 2.83,0.9 0.48,0 1.05,-0.39 0.72,-0.62 1.14,-2.09 1.11,-0.34 0.38,-0.57 0.29,-1.53 0.52,-0.45 1.87,-0.9 1.25,-2.04 1,-0.39 0.62,0.28 0.48,0.45 1.3,2.43 0.57,0.4 2.01,0.79 0.43,0.45 0.91,1.54 0,0 -2.2,2.49 -0.6,1.24 -2.07,2 -3.39,2.47 -4.3,2.19 -6.93,2.62 -1.31,0.99 -1.6,3 -0.76,2.83 -0.81,5.21 -1.5,4.16 -0.35,2.53 0,0 -0.79,-0.05 -4.8,1.52 -1.24,0 -0.77,-0.17 -1.2,-1.58 -1.19,-0.68 -0.63,-1.24 -0.86,-0.96 -0.57,-0.4 -0.72,-0.22 -4.12,0 -2.63,-0.62 -2.63,-0.17 -1.68,0.22 -2.06,0.79 -1.24,0.06 -0.77,-0.17 -1.96,-0.85 -1.58,-0.28 z" fill="rgba(100,160,200,0.10)" stroke="rgba(100,160,200,0.55)" stroke-width="0.8"/>
+<path id="IL-M" title="HaMerkaz" d="m 76.419304,318.03855 1.58,-3.95 0.19,-0.85 0.53,-1.12 0,-0.22 0.19,-0.23 0.24,-1.23 0.29,-0.56 0.04,-0.68 0.2,-0.05 0.04,-0.23 0.15,-0.05 0,-0.4 0.09,-0.17 0.15,0 0,-0.28 0.09,0 0.39,-0.67 0.24,-0.11 0.04,-0.34 1.44,-2.13 1.24,-3.04 1.2,-3.14 2.11,-7.28 0,0 1.41,0.23 0.81,0.62 1.15,0.22 3.07,-0.05 1.48,0.84 1.2,0.17 2.68,-0.17 1.439996,-0.4 1.19,-1.12 2.3,-2.81 1.15,-0.67 0.86,0 0.96,0.39 0.86,1.46 0.67,0.28 0.96,-0.39 0.19,-0.34 0.53,-0.33 1.15,-0.29 1.67,0.17 0.67,-0.67 0.05,-0.9 -0.24,-0.67 -0.72,-0.74 -1.91,-0.84 -0.91,-5.51 -0.24,-0.67 -0.67,-0.73 -1.68,-1.13 -0.57,-0.79 -0.14,-0.78 0.14,-1.13 0.24,-0.67 0.05,-1.75 0.24,-1.57 1.48,-1.8 1.15,-2.08 0.53,-1.3 0.04,-1.74 -0.48,-1.35 0.34,-1.07 0.1,-2.65 -0.29,-0.67 -1.49,-0.79 -0.52,-0.9 -0.91,-0.45 -1.29,-1.13 -1.35,-0.51 -3.68,-0.45 -1.269996,-0.04 0,0 0.29,-0.77 0,-0.28 -0.15,-0.17 0.05,-0.29 0.53,-1.23 0.239996,-0.23 -0.05,-0.45 0.43,-0.79 0.05,-0.67 0.52,-0.79 0.1,-0.79 0.24,-0.56 -0.1,-0.57 0.39,-0.39 0,-0.9 0.33,-1.47 0.29,-0.45 0.48,-1.3 -0.05,-0.67 0.19,-0.28 0.24,-0.79 -0.05,-0.17 0.54,-1.41 0.04,-0.84 -0.15,0 0,-0.17 0.34,-0.57 0.1,-1.29 0.52,-1.02 0.1,-0.56 0.43,-0.96 -0.05,-0.68 0.19,0.12 0.15,-0.06 -0.1,-0.96 0.19,-1.01 0.19,-0.17 -0.04,-0.4 0.71,-3.21 0,-0.23 -0.24,-0.17 -0.04,-0.28 0.62,-0.34 0.05,-0.17 0.33,-1.91 0.19,-0.51 0,-0.68 0.29,-0.56 0.81,-3.73 0,-0.67 0.24,-1.24 -0.28,0 0,-0.12 0.52,-0.5 0.15,-0.34 0.09,-0.79 -0.09,-0.68 0.28,-1.13 -0.33,-0.22 0.24,-0.51 0.19,-0.12 0.38,-1.01 0.15,-0.06 0.14,-0.84 0,0 2.23,-0.09 1.58,0.28 1.96,0.85 0.77,0.17 1.24,-0.06 2.06,-0.79 1.68,-0.22 2.63,0.17 2.63,0.62 4.12,0 0.72,0.22 0.57,0.4 0.86,0.96 0.63,1.24 1.19,0.68 1.2,1.58 0.77,0.17 1.24,0 4.8,-1.52 0.79,0.05 0,0 -0.36,2.62 -1.2,1.17 -4.48,2.01 -1.15,1.45 -1.83,3.44 -0.19,5.47 0.81,5.81 -0.57,1.5 -1.46,1.04 -2.37,3.43 -3.11,7.05 -0.3,2.37 0.08,2.35 2.35,3.52 0.93,1.95 1.31,5.78 0.21,2.6 -0.55,2.12 -1.4,2.65 -0.2,1.61 0.54,1.35 1.8,1.92 1.98,3.77 0.57,2.33 -0.4,2.99 -1.38,3.01 0.04,1.36 0.33,1.09 -0.76,0.62 0.75,2 -2.36,5.04 0.42,4.58 2.64,3.56 3.94,3.14 0.83,3.24 -1.52,4.72 -8.61,1.54 -0.15,0.23 0,0 -4.43,-0.19 -2.67,-0.33 -1.55,0.17 -1.27,0.99 -1.55,4.46 -1.83,1.15 -5.5,1.16 -2.82,0.99 -3.52,3.46 -0.76,1.96 0,0 -0.39,0 -0.53,0.39 -1.1,1.23 -1.729996,2.41 -0.91,0.96 -0.52,0.39 -1.11,0.28 -0.57,-0.39 -0.96,-1.35 -1.24,-3.87 -0.43,-0.95 -0.77,-1.12 -0.96,-0.84 -2.96,-1.68 -0.39,-0.06 -1.1,1.23 -0.53,0.4 -0.71,0.11 -1.63,-0.23 -0.82,0.17 0.15,0.56 1.34,0.56 0.33,1.07 0.96,0.9 0.05,0.44 -0.43,0.51 -0.43,0.05 -1.1,-0.28 -0.34,0.12 -0.05,1.29 -0.48,0.5 -1.58,0.28 -0.43,-0.06 -1.05,-0.84 -1.05,-0.28 -1.92,-0.11 -0.81,-0.62 -0.24,-0.67 0,-0.5 0.38,-0.56 0.81,-0.56 1.3,-0.56 0.48,-0.45 0.33,-0.62 -0.14,-0.79 -0.62,-0.78 -1.78,-0.95 -0.43,-1.01 0,-0.79 0.48,-0.9 0.62,-0.33 0.43,-0.06 1.73,0.62 0.76,0.11 0.91,-0.05 0.48,-0.4 -0.04,-2.18 0.43,-1.41 -0.34,-1.51 0.1,-0.39 1.34,-1.41 0.14,-0.73 -0.33,-0.56 -0.63,-0.33 -1.67,0.61 -1.2,-0.11 -1.05,-1.29 -0.86,0.11 -0.48,0.45 -0.67,0.28 z" fill="rgba(100,160,200,0.10)" stroke="rgba(100,160,200,0.55)" stroke-width="0.8"/>
+<path id="IL-TA" title="Tel-Aviv" d="m 86.859304,291.30855 0.38,-1.49 0.38,-0.89 0.15,-1.3 0.38,-0.5 -0.24,-0.17 0.34,-1.13 0.28,-0.45 0,-0.33 0.2,-0.45 0.24,-0.28 0.14,-1.24 0.57,-0.45 0,-0.51 -0.19,-0.16 0.53,-0.51 0.33,0 0.43,-0.34 0.53,-0.84 0.34,-1.07 0.24,-0.34 0.04,-0.5 -0.09,-0.12 0.29,-0.11 -0.2,-0.28 0.15,-0.17 -0.1,-0.05 0.1,-0.4 0.72,-1.68 0.04,-0.51 0.21,-0.11 0.13,-0.34 -0.24,-0.68 0,-0.56 0.38,-0.28 0.19,0.06 0.29,-0.9 0.43,-0.85 -0.24,-0.45 0.05,-0.33 0.14,0 0.1,0.28 0.19,0 0.53,-1.63 0.33,-1.69 0.43,-0.57 0.15,-0.39 -0.05,-0.22 0.14,-0.12 0.48,-1.85 0,-0.85 0.58,-1.46 -0.1,-0.62 0.53,-0.28 -0.05,-0.45 -0.34,-0.23 0.1,-1.29 0.19,-0.17 0.29,0.11 0.09,-0.17 0.68,-2.25 0.47,-2.53 0.34,-0.58 0,0 1.269996,0.04 3.68,0.45 1.35,0.51 1.29,1.13 0.91,0.45 0.52,0.9 1.49,0.79 0.29,0.67 -0.1,2.65 -0.34,1.07 0.48,1.35 -0.04,1.74 -0.53,1.3 -1.15,2.08 -1.48,1.8 -0.24,1.57 -0.05,1.75 -0.24,0.67 -0.14,1.13 0.14,0.78 0.57,0.79 1.68,1.13 0.67,0.73 0.24,0.67 0.91,5.51 1.91,0.84 0.72,0.74 0.24,0.67 -0.05,0.9 -0.67,0.67 -1.67,-0.17 -1.15,0.29 -0.53,0.33 -0.19,0.34 -0.96,0.39 -0.67,-0.28 -0.86,-1.46 -0.96,-0.39 -0.86,0 -1.15,0.67 -2.3,2.81 -1.19,1.12 -1.439996,0.4 -2.68,0.17 -1.2,-0.17 -1.48,-0.84 -3.07,0.05 -1.15,-0.22 -0.81,-0.62 z" fill="rgba(100,160,200,0.12)" stroke="rgba(100,160,200,0.55)" stroke-width="0.8"/>
+<path id="IL-D" title="HaDarom" d="m 215.1393,399.42855 -0.07,10.29 -0.61,4.04 -2.84,8.1 -6.52,11.71 -1.99,4.04 -1.85,3.27 -0.89,4.04 1.97,4.28 7.69,10.35 1.37,2.94 0.86,4.18 0.18,3.13 -1.17,5.13 -1.06,3.67 -6.6,10.17 -0.7,4.08 0.41,3.26 1.41,3.9 -0.01,4.12 -2.99,2.75 -6.48,4.25 -4.6,10.16 -0.06,3.62 0.87,3.29 -0.88,4.03 -3.3,1.19 -2.57,3.11 -1.52,4.16 -0.02,8.14 -2.43,5.67 -4.23,7.72 -0.91,4.43 -2.56,2.38 -5.09,9.82 -0.41,3.28 -3.9,18.08 -1.19,3.56 -2.38,3.42 -0.68,2.69 5.96,11.21 0.91,3.1 -0.55,2.37 -3.83,4.24 -1.1,3.42 0.59,3.96 -3.28,7.28 5.4,23.89 -13.34,19.14 -3.59,14.26 0.54,15.48 -5.08,10.16 -0.77,3.72 0.5,2.95 -0.5,3.99 -2.94,12.23 0,6.66 0.46,4.16 0.04,3.85 -2.26,2.77 -3.08,2.26 -2.62,3.04 -1.85,3.71 -1.68,4.72 -0.34,-0.11 -0.72,0.05 -0.43,-0.44 -0.38,0 -0.14,0.55 -0.2,0.06 -0.09,0.54 -0.24,0.28 -0.05,0.27 -0.43,0 -0.09,0.27 -0.44,0.17 -0.19,0.38 -0.14,0.82 -0.43,0.72 -0.38,0 0,0.16 -0.53,0.6 -0.62,0.38 -0.15,0.55 -0.67,0.66 0,0.82 -0.43,0.27 -0.62,0.88 -0.34,0.27 0,0.5 -0.76,0.87 -0.72,0.33 -4.35,-5.04 -2.27,-4.29 -0.82,-3.3 -0.69,-5.75 1.62,-5.38 0.81,-5.39 -0.78,-3.71 -3.09,-5.39 0.12,-9.51 -17.629996,-49.49 0.35,-2.99 -5.58,-15.43 -14.85,-41.99 -3.51,-13.2 -12.03,-7.87 -0.44,-6.11 3.57,-10.06 -7.48,-8.77 0.5,-10.87 -4.99,-20.76 -15.18,-31.89 -9.84,-28.81 -14.2200002,-47.2 7.7600002,-5.82 7.67,-6.62 1.9,-3.49 -0.04,-5.41 -0.43,-5.79 1.51,-5.04 5.74,-7.38 17.3,-16.76 5.02,-1.2 1.53,-2.71 -0.02,-3.87 -2.35,-3.47 -7.49,-7 4.16,-6.77 0.72,-0.45 0.34,-0.5 -0.05,-0.11 -0.29,-0.06 0.05,-0.5 -0.15,-0.06 0,-0.16 0.58,-0.68 0,0.23 -0.43,0.5 0.48,0.11 0.09,0.17 0.15,-0.05 2.63,-4.37 0.34,-1.18 0.62,-0.44 0.96,-1.24 0.38,-0.78 -0.05,-0.28 0.53,-0.67 0.28,-0.73 0.24,-0.17 0.1,0.23 0.19,0 2.92,-5.21 0.53,-0.73 1.34,-2.69 0.76,-0.95 0.39,-1.12 1.91,-3.31 1.73,-3.7 0.86,-1.45 0.86,-2.08 0.29,-0.5 0.14,-0.06 -0.05,-0.17 0.48,-0.89 0.48,-1.35 0.62,-1.12 0.72,-1.68 -0.52,-0.56 -0.29,-0.96 0.05,-0.78 0.47,-1.18 0.15,0 0,0.39 -0.19,0.12 -0.29,0.67 0,0.95 0.62,1.07 0.39,0 0.09,-0.28 -0.48,-0.28 0,-0.17 0.19,-0.11 -0.04,-0.56 0.14,-0.17 0.05,-0.45 0,-0.17 -0.19,-0.11 0,-0.23 0.43,0 0.19,0.23 1.1,0 0.1,-0.28 0.38,-0.39 0.09,-0.23 -0.24,-0.11 -0.04,-0.28 0.04,-1.46 0.15,-0.11 0.05,0.22 0.14,0 0,-0.11 0.38,-0.22 1.43,-3.6 1.11,-2.38 0,0 0.65,0 0.67,-0.28 0.48,-0.45 0.86,-0.11 1.05,1.29 1.2,0.11 1.67,-0.61 0.63,0.33 0.33,0.56 -0.14,0.73 -1.34,1.41 -0.1,0.39 0.34,1.51 -0.43,1.41 0.04,2.18 -0.48,0.4 -0.91,0.05 -0.76,-0.11 -1.73,-0.62 -0.43,0.06 -0.62,0.33 -0.48,0.9 0,0.79 0.43,1.01 1.78,0.95 0.62,0.78 0.14,0.79 -0.33,0.62 -0.48,0.45 -1.3,0.56 -0.81,0.56 -0.38,0.56 0,0.5 0.24,0.67 0.81,0.62 1.92,0.11 1.05,0.28 1.05,0.84 0.43,0.06 1.58,-0.28 0.48,-0.5 0.05,-1.29 0.34,-0.12 1.1,0.28 0.43,-0.05 0.43,-0.51 -0.05,-0.44 -0.96,-0.9 -0.33,-1.07 -1.34,-0.56 -0.15,-0.56 0.82,-0.17 1.63,0.23 0.71,-0.11 0.53,-0.4 1.1,-1.23 0.39,0.06 2.96,1.68 0.96,0.84 0.77,1.12 0.43,0.95 1.24,3.87 0.96,1.35 0.57,0.39 1.11,-0.28 0.52,-0.39 0.91,-0.96 1.729996,-2.41 1.1,-1.23 0.53,-0.39 0.39,0 0,0 0.27,0 0.96,0.95 1.1,1.63 0.72,1.62 0.77,2.52 0.38,0.51 0.58,0.33 1.53,-0.33 0.86,0.11 0.62,0.22 0.86,1.07 0,0.73 -0.91,1.9 0.1,0.73 0.77,2.07 0.09,0.84 -0.09,1.29 -0.48,0.95 -0.15,0.79 0.24,3.02 -0.14,1.63 0.43,1.4 0,1.39 -0.29,1.57 0.43,1.01 2.64,1.51 2.49,1.68 2.34,1.29 0.77,0.67 0.96,1.34 2.68,0.67 0.57,0.28 3.75,2.91 0,0 -2.67,3.98 -1.52,7.57 0.75,8.2 -0.64,3.5 -3.45,6.55 -3.82,4.93 -3.35,6.73 0.47,4 1.93,3.13 2.77,2.29 4.28,1.15 7.83,-1.03 7.22,-1.8 7.05,0.59 9.94,0.64 3.64,-1.89 2.39,0.55 3.73,-0.64 3.23,-0.28 4.14,-0.78 2.53,-1.52 5.03,-5.15 4.29,-4.83 5.58,-2.48 5.73,-4.18 6.09,-5.38 2.72,-0.96 11.39,0.17 z" fill="rgba(100,160,200,0.10)" stroke="rgba(100,160,200,0.55)" stroke-width="0.8"/>
+<path id="IL-JM" title="Jerusalem" d="m 170.9293,345.68855 -0.24,0.38 -8.69,0.22 -7.34,3.01 -9.01,8.91 -8.08,3.88 -2.86,2.5 -5.26,5.68 -1.57,2.62 0,0 -3.75,-2.91 -0.57,-0.28 -2.68,-0.67 -0.96,-1.34 -0.77,-0.67 -2.34,-1.29 -2.49,-1.68 -2.64,-1.51 -0.43,-1.01 0.29,-1.57 0,-1.39 -0.43,-1.4 0.14,-1.63 -0.24,-3.02 0.15,-0.79 0.48,-0.95 0.09,-1.29 -0.09,-0.84 -0.77,-2.07 -0.1,-0.73 0.91,-1.9 0,-0.73 -0.86,-1.07 -0.62,-0.22 -0.86,-0.11 -1.53,0.33 -0.58,-0.33 -0.38,-0.51 -0.77,-2.52 -0.72,-1.62 -1.1,-1.63 -0.96,-0.95 -0.27,0 0,0 0.76,-1.96 3.52,-3.46 2.82,-0.99 5.5,-1.16 1.83,-1.15 1.55,-4.46 1.27,-0.99 1.55,-0.17 2.67,0.33 4.43,0.19 0,0 -1.97,2.91 1.44,5.41 3.33,1.43 4.76,0.68 4.39,-1.57 3.24,-3.52 3.28,-1.94 3.8,3.51 3.46,1.66 7.45,3 7.99,-0.04 3.14,3.28 -0.51,7.3 z" fill="rgba(100,160,200,0.13)" stroke="rgba(100,160,200,0.55)" stroke-width="0.8"/>
+<path id="PS" title="Palestine" d="m 54.949304,385.00855 0.02,3.87 -1.53,2.72 -4.99,1.19 -15.95,15.44 -1.38,1.33 -5.75,7.39 -0.68,2.26 -0.83,2.78 0.43,5.79 0.04,5.41 -1.9,3.49 -6.37,5.5 -1.31,1.13 -7.7600002,5.82 -6.69999995,-22.25 0.38,-0.29 5.11999995,-5.01 5.8900002,-6.31 1.87,-1.67 1.58,-1.45 3.21,-3.35 2.54,-2.79 4.07,-4.91 1.01,-1.4 1.34,-1.56 3.78,-4.19 7.85,-10.13 4.32,-6.24 1.86,-3 7.5,6.96 2.34,3.47 z m 177.239996,-136.33 -0.48,-1.61 -0.17,-3.25 -0.67,-2.9 0.62,-4.49 -1.18,-2.93 0.04,-1.44 0.84,-2.36 -1.35,-3.62 0.13,-1.63 0.55,-1.42 0.49,-3.04 -0.42,-1.19 -1.27,-1.58 0.33,-3.64 -4,-1.15 -5.08,-2.37 -2.17,-0.66 -3.92,-0.17 -2.58,0.75 -2.18,-0.35 -1.14,-1.01 0.05,-1.03 -1.23,-1.58 -1,-2.94 0.21,-4.06 -0.54,-4.36 -2.8,-4.74 -2.79,-2.08 -1.46,-0.36 -3.32,-0.05 -8.43,1.55 -2.01,-0.01 -1.37,-0.36 -2.71,-1.34 -2.65,-1.94 -3.07,-3.19 -2.39,-1.3 -1.67,0.26 -0.91,0.46 -3.17,3.58 -0.6,1.24 -2.06,2 -3.4,2.47 -4.29,2.19 -6.93,2.62 -1.31,0.99 -1.03,1.93 -0.57,1.08 -0.76,2.83 -0.8,5.21 -1.5,4.16 -0.71,5.15 -1.21,1.17 -4.48,2.01 -1.15,1.45 -1.83,3.44 -0.19,5.47 0.81,5.81 -0.57,1.51 -0.36,0.26 -1.09,0.78 -2.37,3.43 -3.12,7.05 -0.29,2.37 0.08,2.35 2.35,3.52 0.93,1.95 1.31,5.78 0.21,2.6 -0.55,2.12 -1.4,2.65 -0.1,0.81 -0.1,0.8 0.54,1.34 1.8,1.92 0.24,0.45 1.74,3.32 0.57,2.33 -0.4,2.98 -1.39,3.01 0.04,1.36 0.33,1.09 -0.76,0.62 0.76,2 -2.36,5.05 0.42,4.58 2.64,3.56 3.94,3.14 0.83,3.24 -1.53,4.72 -8.6,1.54 -2.13,3.15 1.44,5.41 3.33,1.43 4.76,0.69 4.39,-1.58 3.24,-3.52 2.35,-1.39 0.94,-0.55 3.79,3.51 3.47,1.66 7.44,3 8,-0.04 3.14,3.28 -0.52,7.3 -1.8,2.81 -0.24,0.37 -8.69,0.23 -7.35,3 -7.45,7.37 -1.56,1.54 -8.08,3.88 -2.86,2.5 -5.26,5.68 -1.57,2.62 -2.67,3.98 -1.52,7.56 0.75,8.2 -0.64,3.5 -3.45,6.55 -3.82,4.93 -3.35,6.73 0.47,4 1.94,3.13 2.76,2.29 4.28,1.14 7.82,-1.03 7.23,-1.8 7.04,0.59 9.94,0.64 3.64,-1.89 2.39,0.55 3.73,-0.64 3.22,-0.27 4.15,-0.78 2.53,-1.52 5.03,-5.15 4.29,-4.83 5.58,-2.48 5.72,-4.18 1.67,-1.47 4.43,-3.91 2.72,-0.96 11.39,0.16 0.12,-8.34 0.35,-8.99 3.64,-12.49 3.74,-11.77 1.59,-5.01 0.2,-0.36 4.17,-7.48 -2.13,-11.79 1.36,-3.83 -1.79,-2.87 1.68,-3.32 -3,-1.91 -1.68,-8.51 3.11,-3 1.09,-7.22 -2.88,-6.34 1.61,-2.34 -0.28,-1.38 -1.89,-2.18 -0.38,-8.72 0.49,-0.98 0.93,-1.86 0.56,-3.59 2.43,-3.29 0.66,-2.25 0.49,-5.4 1.11,-5.06 1.49,-2.94 0.42,-1.73 -0.12,-2.34 z" fill="rgba(180,140,100,0.08)" stroke="rgba(180,140,100,0.40)" stroke-width="0.8"/>
+<g id="cityDots"></g>
+      </svg>
+        <!-- LED overlay: JS appends circles here -->
+      </div>
+    </div>
+    <div style="padding:6px 12px;font-size:10px;color:var(--txt3)" id="map-legend">
+      <span data-en="Hover over a lit LED to see city name" data-he="העבר עכבר מעל נורית להצגת שם העיר">Hover over a lit LED to see city name</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <svg class="card-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span data-en="Current Alerts" data-he="התראות נוכחיות">Current Alerts</span>
+    </div>
+    <div class="card-body" id="alert-list">
+      <div style="font-size:11px;color:var(--txt3)" data-en="No active alerts" data-he="אין התראות פעילות">No active alerts</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TAB 2: CALIBRATOR ════ -->
+<div class="tab-panel" id="tab-calibrator">
+  <!-- Inner sub-tabs matching original 6 stages -->
+  <div class="inner-tabs" id="calib-tabs">
+    <div class="inner-tab active" onclick="Calib.showStage(1)" id="ctab-1" data-en="1 · Upload" data-he="1 · העלאה">1 · Upload</div>
+    <div class="inner-tab" onclick="Calib.showStage(2)" id="ctab-2" data-en="2 · Align" data-he="2 · יישור">2 · Align</div>
+    <div class="inner-tab" onclick="Calib.showStage(3)" id="ctab-3" data-en="3 · Detect" data-he="3 · זיהוי">3 · Detect</div>
+    <div class="inner-tab" onclick="Calib.showStage(4)" id="ctab-4" data-en="4 · Number" data-he="4 · מספור">4 · Number</div>
+    <div class="inner-tab" onclick="Calib.showStage(5)" id="ctab-5" data-en="5 · Send" data-he="5 · שליחה">5 · Send</div>
+    <div class="inner-tab" onclick="Calib.showStage(6)" id="ctab-6" data-en="6 · City DB" data-he="6 · מסד ערים">6 · City DB</div>
+  </div>
+
+  <!-- Stage 1: Upload Photo -->
+  <div id="cs1" class="inner-panel active">
+    <div class="card">
+      <div class="card-header"><span data-en="Upload Board Photo" data-he="העלה תמונת לוח">Upload Board Photo</span></div>
+      <div class="card-body">
+        <div class="info" data-en="Take a top-down photo of your LED board. The calibrator will detect LED positions, align them to the Israel map, and generate the city mapping file for your ESP32." data-he="צלם תמונה מלמעלה של לוח הנוריות שלך.">Take a top-down photo of your LED board.</div>
+        <div class="drop-zone" id="calib-drop" onclick="document.getElementById('calib-file').click()">
+          <div class="drop-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div class="drop-txt"><span data-en="Drop board photo here or " data-he="גרור תמונה לכאן או ">Drop board photo here or </span><em data-en="click to browse" data-he="לחץ לעיון">click to browse</em></div>
+        </div>
+        <input type="file" id="calib-file" accept="image/*" style="display:none">
+        <div id="calib-thumb-wrap" style="display:none;margin-top:8px">
+          <img id="calib-thumb" style="max-width:100%;max-height:180px;border-radius:4px;border:1px solid var(--bdr)">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-red" id="btn-to-align" onclick="Calib.showStage(2)" disabled data-en="Next: Align Map" data-he="הבא: יישור מפה">Next: Align Map</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span data-en="Reference Map" data-he="מפת עזר">Reference Map</span> — <span id="calib-city-count">0</span> <span data-en="zones" data-he="אזורים">zones</span></div>
+      <div class="card-body" style="display:flex;justify-content:center;overflow:auto">
+        <!-- Reuse the same SVG for the reference thumbnail -->
+        <svg id="calib-ref-svg" viewBox="0 0 294.62534 792.60406" style="max-height:400px;width:auto">
+          <g id="calib-ref-paths"></g>
+          <g id="calib-city-dots"></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 2: Align -->
+  <div id="cs2" class="inner-panel">
+    <div class="card">
+      <div class="card-header"><span data-en="Align Photo to Map" data-he="יישר תמונה למפה">Align Photo to Map</span></div>
+      <div class="card-body">
+        <div class="info" data-en="Drag the four corner handles to match the geographic corners of your LED board to the map corners: NW=Rosh HaNikra, NE=Golan, SE=Eilat, SW=Gaza." data-he="גרור את ידיות הפינה לפינות הגאוגרפיות של הלוח.">Drag the four corner handles to match the geographic corners.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
+          <label style="margin:0;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2)">
+            <input type="checkbox" id="show-warp" onchange="Calib.renderAlign()" checked>
+            <span data-en="Show map overlay" data-he="הצג שכבת מפה">Show map overlay</span>
+          </label>
+          <button class="btn" onclick="Calib.resetAlignPins()" style="font-size:10px;padding:4px 8px" data-en="Reset pins" data-he="אפס סיכות">Reset pins</button>
+        </div>
+      </div>
+      <div style="background:#050809;display:flex;justify-content:center;padding:8px">
+        <canvas id="align-canvas" style="max-width:100%;cursor:crosshair;display:block"></canvas>
+      </div>
+      <div class="card-body">
+        <div class="btn-row">
+          <button class="btn" onclick="Calib.showStage(1)" data-en="Back" data-he="חזור">Back</button>
+          <button class="btn btn-red" onclick="Calib.showStage(3)" data-en="Next: Detect LEDs" data-he="הבא: זיהוי נוריות">Next: Detect LEDs</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 3: Detect LEDs -->
+  <div id="cs3" class="inner-panel">
+    <div class="card">
+      <div class="card-header"><span data-en="Detect LEDs" data-he="זיהוי נוריות">Detect LEDs</span></div>
+      <div class="card-body">
+        <div class="info" data-en="Adjust the threshold slider until all LEDs are detected as red circles. Use Add/Remove mode to fix any misses." data-he="כוונן את הסף עד שכל הנוריות מזוהות.">Adjust threshold until all LEDs are detected.</div>
+        <div class="sl-row">
+          <span class="sl-lbl" data-en="Brightness threshold" data-he="סף בהירות">Brightness threshold</span>
+          <input type="range" id="sl-thresh" min="30" max="250" value="140" oninput="Calib.updateThresh(this.value)">
+          <span class="sl-val" id="thresh-val">140</span>
+        </div>
+        <div class="sl-row">
+          <span class="sl-lbl" data-en="LED size (px)" data-he="גודל נורית">LED size (px)</span>
+          <input type="range" id="sl-led-size" min="3" max="30" value="10" oninput="Calib.updateLedSize(this.value)">
+          <span class="sl-val" id="led-size-val">10</span>
+        </div>
+        <div class="sl-row">
+          <span class="sl-lbl" data-en="Min distance (px)" data-he="מרחק מינימלי">Min distance (px)</span>
+          <input type="range" id="sl-min-dist" min="5" max="60" value="15" oninput="Calib.updateMinDist(this.value)">
+          <span class="sl-val" id="min-dist-val">15</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+          <div class="mode-sel" style="width:auto">
+            <button class="mode-btn active" id="edit-add" onclick="Calib.setEditMode('add')" data-en="Add" data-he="הוסף">Add</button>
+            <button class="mode-btn" id="edit-remove" onclick="Calib.setEditMode('remove')" data-en="Remove" data-he="הסר">Remove</button>
+            <button class="mode-btn" id="edit-move" onclick="Calib.setEditMode('move')" data-en="Move" data-he="הזז">Move</button>
+          </div>
+          <span id="detect-count" style="font-size:11px;color:var(--green)">0 LEDs</span>
+        </div>
+      </div>
+      <div style="background:#050809;display:flex;justify-content:center;padding:8px">
+        <canvas id="detect-canvas" style="max-width:100%;cursor:crosshair;display:block"></canvas>
+      </div>
+      <div class="card-body">
+        <div class="btn-row">
+          <button class="btn" onclick="Calib.showStage(2)" data-en="Back" data-he="חזור">Back</button>
+          <button class="btn btn-red" onclick="Calib.autoDetect()" data-en="Auto-detect" data-he="זיהוי אוטומטי">Auto-detect</button>
+          <button class="btn btn-red" onclick="Calib.showStage(4)" data-en="Next: Number Wiring" data-he="הבא: מספור חיווט">Next: Number Wiring</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 4: Number Wiring -->
+  <div id="cs4" class="inner-panel">
+    <div class="card">
+      <div class="card-header"><span data-en="Number Wiring Order" data-he="מספר סדר חיווט">Number Wiring Order</span></div>
+      <div class="card-body">
+        <div class="info" data-en="Click the first LED in your wiring chain (LED #0), then the second. Auto-snake fills the rest. Shift-click any LED to re-snake from that point. Right-click to set recalibration start." data-he="לחץ על הנורית הראשונה בשרשרת (מס' 0), ואז השנייה.">Click LED #0 then LED #1 to set direction. Auto-snake fills the rest.</div>
+        <div id="snake-stats" style="font-size:11px;color:var(--txt2);margin-bottom:8px"></div>
+        <div class="btn-row" style="margin-bottom:8px">
+          <button class="btn btn-green" onclick="Calib.autoSnake()" id="btn-auto-snake" disabled data-en="Auto-snake" data-he="נחש אוטומטי">Auto-snake</button>
+          <button class="btn btn-yellow" onclick="Calib.recalibrateFromHere()" id="btn-recalib" disabled data-en="Re-snake from here" data-he="נחש מכאן">Re-snake from here</button>
+          <button class="btn" onclick="Calib.undoSnake()" data-en="Undo" data-he="בטל">Undo</button>
+          <button class="btn" onclick="Calib.clearSnake()" data-en="Clear" data-he="נקה">Clear</button>
+        </div>
+      </div>
+      <div style="background:#050809;display:flex;justify-content:center;padding:8px">
+        <canvas id="number-canvas" style="max-width:100%;cursor:crosshair;display:block"></canvas>
+      </div>
+      <div class="card-body">
+        <div class="btn-row">
+          <button class="btn" onclick="Calib.showStage(3)" data-en="Back" data-he="חזור">Back</button>
+          <button class="btn btn-red" onclick="Calib.buildAndSend()" data-en="Next: Build & Send" data-he="הבא: בנה ושלח">Next: Build &amp; Send</button>
+        </div>
+      </div>
+    </div>
+    <!-- Number popup -->
+    <div id="num-popup" style="display:none">
+      <div style="font-size:10px;color:var(--txt2)" data-en="Set wire index for LED" data-he="קבע אינדקס חוט לנורית">Set wire index for LED <span id="popup-led-id"></span></div>
+      <input type="number" id="popup-input" min="0" onkeydown="Calib.popupKey(event)">
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="Calib.popupConfirm()" style="flex:1" data-en="OK" data-he="אישור">OK</button>
+        <button class="btn" onclick="Calib.popupCancel()" style="flex:1" data-en="Cancel" data-he="ביטול">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 5: Send to ESP32 -->
+  <div id="cs5" class="inner-panel">
+    <div class="card">
+      <div class="card-header"><span data-en="Send to ESP32" data-he="שלח ל-ESP32">Send to ESP32</span></div>
+      <div class="card-body">
+        <div class="stat-grid" id="calib-stats-send">
+          <div class="stat"><div class="stat-val" id="calib-n-leds">0</div><div class="stat-lbl">LEDs</div></div>
+          <div class="stat"><div class="stat-val" id="calib-n-cities">0</div><div class="stat-lbl" data-en="Cities" data-he="ערים">Cities</div></div>
+          <div class="stat"><div class="stat-val" id="calib-payload-kb">0</div><div class="stat-lbl">KB</div></div>
+        </div>
+        <div style="margin-bottom:8px">
+          <label data-en="Map preview (first 60 LEDs)" data-he="תצוגה מקדימה">Map preview (first 60 LEDs)</label>
+          <pre id="calib-map-prev" style="font-size:9px;background:var(--bg3);padding:8px;border-radius:4px;max-height:120px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--bdr)"></pre>
+        </div>
+        <div id="calib-pna-warn" class="warn" style="display:none" data-en="Browser blocked request (Private Network Access). Connect your phone to the same WiFi as the ESP32, or use the AP hotspot directly." data-he="הדפדפן חסם את הבקשה.">Browser blocked request. Connect to same WiFi as ESP32.</div>
+        <div class="btn-row">
+          <button class="btn btn-red" onclick="Calib.sendToDevice()" id="btn-send-config" data-en="Send to Device" data-he="שלח למכשיר">Send to Device</button>
+          <button class="btn" onclick="Calib.downloadPayload()" data-en="Download JSON" data-he="הורד JSON">Download JSON</button>
+          <button class="btn" onclick="Calib.copyPayload()" data-en="Copy JSON" data-he="העתק JSON">Copy JSON</button>
+        </div>
+        <div id="calib-send-log" class="logbox" style="margin-top:10px;height:120px"></div>
+      </div>
+    </div>
+    <!-- Preview map -->
+    <div class="card">
+      <div class="card-header"><span data-en="LED Position Preview" data-he="תצוגת מיקום נוריות">LED Position Preview</span></div>
+      <div class="card-body" style="display:flex;justify-content:center">
+        <svg id="calib-preview-svg" viewBox="0 0 294.62534 792.60406" style="max-height:400px;width:auto">
+          <g id="calib-preview-paths"></g>
+          <g id="preview-led-dots"></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 6: City DB -->
+  <div id="cs6" class="inner-panel">
+    <div class="card">
+      <div class="card-header"><span data-en="City / Zone Database" data-he="מסד נתוני ערים">City / Zone Database</span> — <span id="db-count">0</span> <span data-en="zones" data-he="אזורים">zones</span></div>
+      <div class="card-body">
+        <div class="irow">
+          <input type="text" id="db-search" placeholder="Search city / עיר..." oninput="Calib.dbFilter()" style="flex:1">
+          <button class="btn" onclick="Calib.dbExport()" data-en="Export" data-he="ייצא">Export</button>
+          <button class="btn" onclick="document.getElementById('db-import').click()" data-en="Import" data-he="ייבא">Import</button>
+          <input type="file" id="db-import" accept=".json" style="display:none" onchange="Calib.dbImport(this)">
+        </div>
+        <div id="db-table-wrap" style="overflow-x:auto;margin-top:8px">
+          <table id="db-table" style="width:100%;border-collapse:collapse;font-size:10px">
+            <thead>
+              <tr style="border-bottom:1px solid var(--bdr);color:var(--txt3)">
+                <th style="padding:4px 6px;text-align:left" onclick="Calib.dbSort('idx')">#</th>
+                <th style="padding:4px 6px;text-align:left" onclick="Calib.dbSort('eng')" data-en="English" data-he="אנגלית">English</th>
+                <th style="padding:4px 6px;text-align:left" onclick="Calib.dbSort('heb')" data-en="Hebrew" data-he="עברית">Hebrew</th>
+                <th style="padding:4px 6px;text-align:right" onclick="Calib.dbSort('lat')">Lat</th>
+                <th style="padding:4px 6px;text-align:right" onclick="Calib.dbSort('lon')">Lon</th>
+                <th style="padding:4px 6px"></th>
+              </tr>
+            </thead>
+            <tbody id="db-tbody"></tbody>
+          </table>
+        </div>
+        <div id="db-pagination" style="display:flex;gap:6px;margin-top:8px;align-items:center;font-size:11px;color:var(--txt2)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TAB 3: SCENES ════ -->
+<div class="tab-panel" id="tab-scenes">
+  <div class="card">
+    <div class="card-header">
+      <svg class="card-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span data-en="Idle Animation" data-he="אנימציית המתנה">Idle Animation</span>
+    </div>
+    <div class="card-body">
+      <div class="scene-grid" id="anim-grid">
+        <div class="scene-card" onclick="Scenes.setAnim(0)" id="anim-0">
+          <div class="scene-name" data-en="Breath" data-he="נשימה">Breath</div>
+          <div class="scene-desc" data-en="Slow organic pulse" data-he="פעימה אורגנית איטית">Slow organic pulse</div>
+        </div>
+        <div class="scene-card" onclick="Scenes.setAnim(1)" id="anim-1">
+          <div class="scene-name" data-en="Pulse" data-he="פעימה">Pulse</div>
+          <div class="scene-desc" data-en="All LEDs in sync" data-he="כל הנוריות מסונכרנות">All LEDs in sync</div>
+        </div>
+        <div class="scene-card" onclick="Scenes.setAnim(2)" id="anim-2">
+          <div class="scene-name" data-en="Rainbow" data-he="קשת">Rainbow</div>
+          <div class="scene-desc" data-en="Cycling hue wave" data-he="גל גוון מחזורי">Cycling hue wave</div>
+        </div>
+        <div class="scene-card" onclick="Scenes.setAnim(3)" id="anim-3">
+          <div class="scene-name" data-en="Solid" data-he="אחיד">Solid</div>
+          <div class="scene-desc" data-en="Steady idle color" data-he="צבע המתנה קבוע">Steady idle color</div>
+        </div>
+        <div class="scene-card" onclick="Scenes.setAnim(4)" id="anim-4">
+          <div class="scene-name" data-en="Off" data-he="כבוי">Off</div>
+          <div class="scene-desc" data-en="LEDs dark when idle" data-he="נוריות כבויות בהמתנה">LEDs dark when idle</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <svg class="card-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      <span data-en="Alert Colors by Threat Type" data-he="צבעי התראה לפי סוג איום">Alert Colors by Threat Type</span>
+    </div>
+    <div class="card-body">
+      <div class="threat-grid" id="threat-grid">
+        <!-- Populated by JS -->
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-red" onclick="Scenes.saveThreatColors()" data-en="Save Colors" data-he="שמור צבעים">Save Colors</button>
+        <button class="btn" onclick="Scenes.resetThreatColors()" data-en="Reset to defaults" data-he="איפוס לברירת מחדל">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <svg class="card-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span data-en="Scene Presets" data-he="פריסות מראה">Scene Presets</span>
+    </div>
+    <div class="card-body">
+      <div class="info" data-en="Save your current color and animation settings as a named preset. Applying a preset instantly updates the device." data-he="שמור את ההגדרות הנוכחיות כפריסה בעלת שם.">Save current settings as a named preset.</div>
+      <div id="preset-grid" class="scene-grid">
+        <!-- Populated by JS -->
+      </div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-green" onclick="Scenes.savePreset()" data-en="Save current as preset" data-he="שמור נוכחי כפריסה">Save current as preset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TAB 4: SETTINGS ════ -->
+<div class="tab-panel" id="tab-settings">
+  <div class="inner-tabs">
+    <div class="inner-tab active" onclick="Settings.showSection('polling')" data-en="Polling" data-he="סקר">Polling</div>
+    <div class="inner-tab" onclick="Settings.showSection('brightness')" data-en="Brightness" data-he="בהירות">Brightness</div>
+    <div class="inner-tab" onclick="Settings.showSection('colors')" data-en="Colors" data-he="צבעים">Colors</div>
+    <div class="inner-tab" onclick="Settings.showSection('hardware')" data-en="Hardware" data-he="חומרה">Hardware</div>
+    <div class="inner-tab" onclick="Settings.showSection('solid')" data-en="Solid Cities" data-he="ערים קבועות">Solid Cities</div>
+  </div>
+
+  <!-- Polling -->
+  <div id="sec-polling" class="inner-panel active">
+    <div class="card">
+      <div class="card-header" data-en="Alert Polling" data-he="סקר התראות">Alert Polling</div>
+      <div class="card-body">
+        <div class="sl-row"><span class="sl-lbl" data-en="Poll interval (sec)" data-he="מרווח סקר (שנ)">Poll interval (sec)</span><input type="range" id="s-poll" min="1" max="30" value="3" oninput="document.getElementById('s-poll-v').textContent=this.value"><span class="sl-val" id="s-poll-v">3</span></div>
+        <div class="sl-row"><span class="sl-lbl" data-en="Alert duration (sec)" data-he="משך התראה (שנ)">Alert duration (sec)</span><input type="range" id="s-dur" min="1" max="600" value="90" oninput="document.getElementById('s-dur-v').textContent=this.value"><span class="sl-val" id="s-dur-v">90</span></div>
+        <div class="sl-row"><span class="sl-lbl" data-en="Blink speed (×0.1 Hz)" data-he="מהירות הבהוב">Blink speed (×0.1 Hz)</span><input type="range" id="s-blink" min="1" max="50" value="20" oninput="document.getElementById('s-blink-v').textContent=this.value"><span class="sl-val" id="s-blink-v">20</span></div>
+        <div class="btn-row"><button class="btn btn-red" onclick="Settings.savePolling()" data-en="Save" data-he="שמור">Save</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Brightness -->
+  <div id="sec-brightness" class="inner-panel">
+    <div class="card">
+      <div class="card-header" data-en="LED Brightness" data-he="בהירות נוריות">LED Brightness</div>
+      <div class="card-body">
+        <label data-en="Brightness Mode" data-he="מצב בהירות">Brightness Mode</label>
+        <div class="mode-sel" style="margin-bottom:12px">
+          <button class="mode-btn" id="bm-0" onclick="Settings.setBrightMode(0)" data-en="Day" data-he="יום">Day</button>
+          <button class="mode-btn" id="bm-1" onclick="Settings.setBrightMode(1)" data-en="Night" data-he="לילה">Night</button>
+          <button class="mode-btn active" id="bm-2" onclick="Settings.setBrightMode(2)" data-en="Auto" data-he="אוטומטי">Auto</button>
+        </div>
+        <div class="sl-row"><span class="sl-lbl" data-en="Day brightness" data-he="בהירות יום">Day brightness</span><input type="range" id="s-bri-day" min="0" max="255" value="180" oninput="document.getElementById('s-bri-day-v').textContent=this.value"><span class="sl-val" id="s-bri-day-v">180</span></div>
+        <div class="sl-row"><span class="sl-lbl" data-en="Night brightness" data-he="בהירות לילה">Night brightness</span><input type="range" id="s-bri-night" min="0" max="255" value="30" oninput="document.getElementById('s-bri-night-v').textContent=this.value"><span class="sl-val" id="s-bri-night-v">30</span></div>
+        <div class="sl-row"><span class="sl-lbl" data-en="Idle brightness" data-he="בהירות המתנה">Idle brightness</span><input type="range" id="s-bri-idle" min="0" max="255" value="60" oninput="document.getElementById('s-bri-idle-v').textContent=this.value"><span class="sl-val" id="s-bri-idle-v">60</span></div>
+        <div id="auto-hours-bri" style="display:none">
+          <div style="height:1px;background:var(--bdr);margin:10px 0"></div>
+          <div class="grid2">
+            <div><label data-en="LED Night start" data-he="תחילת לילה (נוריות)">LED Night start</label><input type="text" id="s-night-start" placeholder="22:00" maxlength="5"></div>
+            <div><label data-en="LED Night end" data-he="סוף לילה (נוריות)">LED Night end</label><input type="text" id="s-night-end" placeholder="07:00" maxlength="5"></div>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn btn-red" onclick="Settings.saveBrightness()" data-en="Save" data-he="שמור">Save</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" data-en="UI Theme Schedule" data-he="לוח זמנים ל-UI">UI Theme Schedule</div>
+      <div class="card-body">
+        <label data-en="UI Theme Mode" data-he="מצב ערכת נושא">UI Theme Mode</label>
+        <div class="mode-sel" style="margin-bottom:12px">
+          <button class="mode-btn" id="utm-0" onclick="Settings.setUiTheme(0)" data-en="Day" data-he="יום">Day</button>
+          <button class="mode-btn" id="utm-1" onclick="Settings.setUiTheme(1)" data-en="Night" data-he="לילה">Night</button>
+          <button class="mode-btn active" id="utm-2" onclick="Settings.setUiTheme(2)" data-en="Auto" data-he="אוטומטי">Auto</button>
+        </div>
+        <div id="auto-hours-ui" style="display:none">
+          <div class="grid2">
+            <div><label data-en="UI Night start" data-he="תחילת לילה (UI)">UI Night start</label><input type="text" id="s-ui-night-start" placeholder="22:00" maxlength="5"></div>
+            <div><label data-en="UI Night end" data-he="סוף לילה (UI)">UI Night end</label><input type="text" id="s-ui-night-end" placeholder="07:00" maxlength="5"></div>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn btn-red" onclick="Settings.saveUiTheme()" data-en="Save" data-he="שמור">Save</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Colors -->
+  <div id="sec-colors" class="inner-panel">
+    <div class="card">
+      <div class="card-header" data-en="LED Colors" data-he="צבעי נוריות">LED Colors</div>
+      <div class="card-body">
+        <div class="color-row"><label style="margin:0;min-width:120px" data-en="Idle color" data-he="צבע המתנה">Idle color</label><input type="color" id="s-idle-color" value="#00ff00" oninput="document.getElementById('s-idle-hex').textContent=this.value"><span class="color-hex" id="s-idle-hex">#00ff00</span></div>
+        <div class="color-row"><label style="margin:0;min-width:120px" data-en="Disconnected color" data-he="צבע ניתוק">Disconnected color</label><input type="color" id="s-disc-color" value="#0000ff" oninput="document.getElementById('s-disc-hex').textContent=this.value"><span class="color-hex" id="s-disc-hex">#0000ff</span></div>
+        <div class="btn-row"><button class="btn btn-red" onclick="Settings.saveColors()" data-en="Save" data-he="שמור">Save</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hardware -->
+  <div id="sec-hardware" class="inner-panel">
+    <div class="card">
+      <div class="card-header" data-en="Hardware" data-he="חומרה">Hardware</div>
+      <div class="card-body">
+        <div class="irow"><span class="ilbl" data-en="LED Data Pin (GPIO)" data-he="פין נתוני נוריות">LED Data Pin (GPIO)</span><input type="number" id="s-led-pin" min="0" max="39" value="5" style="width:80px"></div>
+        <div class="info" style="margin-top:6px" data-en="Changing the LED pin requires a device restart." data-he="שינוי פין הנוריות מצריך הפעלה מחדש.">Changing the LED pin requires a device restart.</div>
+        <div style="height:1px;background:var(--bdr);margin:12px 0"></div>
+        <div class="irow"><span class="ilbl" data-en="Notification strip pin" data-he="פין רצועת הודעות">Notification strip pin</span><input type="number" id="s-notif-pin" min="0" max="39" value="22" style="width:80px"></div>
+        <div class="irow"><span class="ilbl" data-en="Notification LED count" data-he="מספר נוריות הודעה">Notification LED count</span><input type="number" id="s-notif-leds" min="0" max="100" value="0" style="width:80px"></div>
+        <div class="irow"><span class="ilbl" data-en="Speaker pin" data-he="פין רמקול">Speaker pin</span><input type="number" id="s-speaker-pin" min="0" max="39" value="255" style="width:80px"></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <input type="checkbox" id="s-speaker-en">
+          <span data-en="Speaker enabled" data-he="רמקול מופעל">Speaker enabled</span>
+        </label>
+        <div class="btn-row"><button class="btn btn-red" onclick="Settings.saveHardware()" data-en="Save" data-he="שמור">Save</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" data-en="WiFi" data-he="WiFi">WiFi</div>
+      <div class="card-body">
+        <label data-en="SSID" data-he="שם רשת">SSID</label><input type="text" id="s-ssid" autocomplete="off">
+        <label data-en="Password" data-he="סיסמה">Password</label><input type="password" id="s-pass" autocomplete="off">
+        <div class="btn-row"><button class="btn btn-red" onclick="Settings.saveWifi()" data-en="Save & Connect" data-he="שמור וחבר">Save &amp; Connect</button></div>
+        <div style="margin-top:6px;font-size:10px;color:var(--txt3)">AP: RedAlertMap / redalert1 @ 192.168.4.1</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Solid Cities -->
+  <div id="sec-solid" class="inner-panel">
+    <div class="card">
+      <div class="card-header" data-en="Solid-Stay Cities" data-he="ערים קבועות">Solid-Stay Cities</div>
+      <div class="card-body">
+        <div class="info" data-en="Cities in this list will have their LED stay solid (no blink) when an alert is active." data-he="ערים ברשימה זו יישארו עם נורית קבועה ללא הבהוב.">Cities in this list stay solid during alerts.</div>
+        <div id="solid-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:28px"></div>
+        <label data-en="Add city" data-he="הוסף עיר">Add city</label>
+        <div style="position:relative">
+          <input type="text" id="solid-search" placeholder="Type city name / שם עיר..." autocomplete="off" oninput="Settings.solidSearch(this.value)">
+          <div id="solid-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--bdr2);border-radius:0 0 var(--radius) var(--radius);z-index:99;max-height:180px;overflow-y:auto"></div>
+        </div>
+        <input type="hidden" id="solid-heb">
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="Settings.addSolid()" data-en="Add City" data-he="הוסף עיר">Add City</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TAB 5: HISTORY ════ -->
+<div class="tab-panel" id="tab-history">
+  <div class="stat-grid" id="hist-stats">
+    <div class="stat"><div class="stat-val" id="h-total">0</div><div class="stat-lbl" data-en="Total Alerts" data-he="סה&quot;כ התראות">Total Alerts</div></div>
+    <div class="stat"><div class="stat-val" id="h-cities">0</div><div class="stat-lbl" data-en="Cities Hit" data-he="ערים שנפגעו">Cities Hit</div></div>
+    <div class="stat"><div class="stat-val" id="h-top">--</div><div class="stat-lbl" data-en="Most Alerted" data-he="הכי נפגעת">Most Alerted</div></div>
+  </div>
+
+  <div class="chart-wrap" id="chart-timeline">
+    <div class="chart-title" data-en="Alert Activity (last 50 events)" data-he="פעילות התראות (50 אחרונות)">Alert Activity (last 50 events)</div>
+    <canvas id="canvas-timeline" height="120"></canvas>
+  </div>
+
+  <div class="grid2">
+    <div class="chart-wrap" id="chart-cities">
+      <div class="chart-title" data-en="Top Cities" data-he="ערים מובילות">Top Cities</div>
+      <div id="bar-cities"></div>
+    </div>
+    <div class="chart-wrap" id="chart-threats">
+      <div class="chart-title" data-en="Threat Types" data-he="סוגי איום">Threat Types</div>
+      <div id="bar-threats"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span data-en="Alert Log" data-he="יומן התראות">Alert Log</span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn" onclick="History.refresh()" style="font-size:10px;padding:3px 8px" data-en="Refresh" data-he="רענן">Refresh</button>
+        <button class="btn btn-red" onclick="History.clear()" style="font-size:10px;padding:3px 8px" data-en="Clear" data-he="נקה">Clear</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="alert-log-box" class="logbox" style="height:240px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TAB 6: DEVICE ════ -->
+<div class="tab-panel" id="tab-device">
+  <div class="stat-grid" id="dev-stats">
+    <div class="stat"><div class="stat-val" id="d-fw">--</div><div class="stat-lbl" data-en="Firmware" data-he="קושחה">Firmware</div></div>
+    <div class="stat"><div class="stat-val" id="d-leds">--</div><div class="stat-lbl">LEDs</div></div>
+    <div class="stat"><div class="stat-val" id="d-cities">--</div><div class="stat-lbl" data-en="Cities" data-he="ערים">Cities</div></div>
+    <div class="stat"><div class="stat-val" id="d-fails">--</div><div class="stat-lbl" data-en="Poll Fails" data-he="כשלי סקר">Poll Fails</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" data-en="Map Upload" data-he="העלאת מפה">Map Upload</div>
+    <div class="card-body">
+      <div class="info" data-en="Upload a city map JSON file. Use the Calibrator tab to generate one from your board photo." data-he="העלה קובץ JSON של מפת ערים.">Upload a city map JSON file (generated by the Calibrator).</div>
+      <label data-en="City map JSON file" data-he="קובץ JSON של מפת ערים">City map JSON file</label>
+      <input type="file" id="map-file" accept=".json" style="margin-top:4px;color:var(--txt2)">
+      <div class="btn-row">
+        <button class="btn btn-blue" onclick="Device.uploadMap()" data-en="Upload Map" data-he="העלה מפה">Upload Map</button>
+        <button class="btn btn-red" onclick="Device.deleteMap()" data-en="Delete Map" data-he="מחק מפה">Delete Map</button>
+      </div>
+      <div id="map-result" style="margin-top:6px;font-size:11px;color:var(--txt2)"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" data-en="OTA Firmware Update" data-he="עדכון קושחה OTA">OTA Firmware Update</div>
+    <div class="card-body">
+      <label data-en="Firmware .bin file" data-he="קובץ .bin של קושחה">Firmware .bin file</label>
+      <input type="file" id="ota-file" accept=".bin" style="margin-top:4px;color:var(--txt2)">
+      <div class="btn-row">
+        <button class="btn" onclick="Device.uploadOTA()" data-en="Upload Firmware" data-he="העלה קושחה">Upload Firmware</button>
+      </div>
+      <div id="ota-bar-wrap" style="display:none;margin-top:8px">
+        <div class="progress-wrap"><div class="progress-fill" id="ota-fill" style="width:0"></div></div>
+      </div>
+      <div id="ota-result" style="margin-top:6px;font-size:11px;color:var(--txt2)"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span data-en="System Log" data-he="יומן מערכת">System Log</span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn" onclick="Device.refreshSyslog()" style="font-size:10px;padding:3px 8px" data-en="Refresh" data-he="רענן">Refresh</button>
+        <button class="btn btn-red" onclick="Device.clearSyslog()" style="font-size:10px;padding:3px 8px" data-en="Clear" data-he="נקה">Clear</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="syslog-box" class="logbox" style="height:200px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" data-en="Raw Poll Status" data-he="סטטוס סקר גולמי">Raw Poll Status</div>
+    <div class="card-body">
+      <pre id="raw-status" style="font-size:9px;color:var(--txt2);white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto"></pre>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script src="/cities.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
